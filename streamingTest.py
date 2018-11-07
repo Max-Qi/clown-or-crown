@@ -6,19 +6,11 @@ reddit = praw.Reddit(client_id = 'XQ8g_-vzWINK6w',
                      password = 'ASDasdreddit98',
                      user_agent = 'JustATest')
 
-subredditName = 'brickross'
+subredditName = 'hiphopheads'
 subreddit = reddit.subreddit(subredditName)
 
 for comment in subreddit.stream.comments():
     try:
-        parent_id = str(comment.parent())
-        parent = reddit.comment(parent_id)
-        # print('Parent:')
-        # print(parent.body)
-        print('Reply:')
-        try:
-            print(comment.body)
-        except UnicodeEncodeError as e:
-            print("EMOJI BAD!")
+        print(comment.body)
     except praw.exceptions.PRAWException as e:
         pass

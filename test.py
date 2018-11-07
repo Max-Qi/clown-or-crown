@@ -33,4 +33,3 @@ for submission in hots:
 
         for topLevelComment in comments:
             depthFirstIteration(0, topLevelComment)
-            print('')
