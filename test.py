@@ -1,10 +1,10 @@
 import praw
 
-reddit = praw.Reddit(client_id = 'XQ8g_-vzWINK6w',
-                     client_secret = 'w6oQWVna7ufQ0OnSUHl0p2UO1J8',
-                     username = 'BrickRos',
-                     password = 'ASDasdreddit98',
-                     user_agent = 'JustATest')
+reddit = praw.Reddit(client_id = 'I dont know about you',
+                     client_secret = 'but im feeling 22',
+                     username = 'everythings gonna be alright',
+                     password = 'you keep me next to you',
+                     user_agent = 'you dont know about me')
 
 subredditName = 'hiphopcirclejerk'
 subreddit = reddit.subreddit(subredditName)
