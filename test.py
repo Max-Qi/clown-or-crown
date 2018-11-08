@@ -1,10 +1,14 @@
 import praw
 
-reddit = praw.Reddit(client_id = 'I dont know about you',
-                     client_secret = 'but im feeling 22',
-                     username = 'everythings gonna be alright',
-                     password = 'you keep me next to you',
-                     user_agent = 'you dont know about me')
+with open('config.txt') as f:
+    lines = f.readlines()
+
+print (lines[0], lines[1])
+reddit = praw.Reddit(client_id = lines[0],
+                     client_secret = lines[1],
+                     username = lines[2],
+                     password = lines[3],
+                     user_agent = lines[4])
 
 subredditName = 'hiphopcirclejerk'
 subreddit = reddit.subreddit(subredditName)
@@ -29,7 +33,7 @@ for submission in hots:
         print(submission.title, submission.num_comments)
         comments = submission.comments
         commentCount = 0
-        comments.replace_more(limit = 1)
+        # comments.replace_more(limit = 0)
 
         for topLevelComment in comments:
             depthFirstIteration(0, topLevelComment)
