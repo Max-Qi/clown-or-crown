@@ -12,29 +12,24 @@ reddit = praw.Reddit(client_id = lines[0].rstrip(),
                      password = lines[3].rstrip(),
                      user_agent = lines[4].rstrip())
 
-subredditName = 'hiphopcirclejerk'
+subredditName = 'hiphopheads'
 subreddit = reddit.subreddit(subredditName)
 
-hots = subreddit.hot(limit = 3)
+hots = subreddit.hot(limit = 1)
 
 
 def depthFirstIteration (level, comment):
     print (4 * level * ' ', comment.body)
+    comment.replies.replace_more(limit=None)
     for reply in comment.replies:
         depthFirstIteration (level + 1, reply)
     return
 
-def breadthFirstIteration (comment):
-    for comment in comments.list():
-        commentCount = commentCount + 1
-        print (comment.body)
-    return
 
 for submission in hots:
-    if not submission.stickied:
+    # if not submission.stickied:
         print(submission.title, submission.num_comments)
-        comments = submission.comments
-        commentCount = 0
+        submission.comments.replace_more(limit=None)
         # comments.replace_more(limit = 0)
-        for topLevelComment in comments:
+        for topLevelComment in submission.comments:
             depthFirstIteration(0, topLevelComment)
