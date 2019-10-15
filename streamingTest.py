@@ -1,9 +1,9 @@
 import praw
 
-reddit = praw.Reddit(client_id = 'XQ8g_-vzWINK6w',
-                     client_secret = 'w6oQWVna7ufQ0OnSUHl0p2UO1J8',
+reddit = praw.Reddit(client_id = 'e51alGh5lHsHRQ',
+                     client_secret = 'b8E3JLiTtvGA8G2cPsb7Rht15sM',
                      username = 'BrickRos',
-                     password = 'ASDasdreddit98',
+                     password = 'ASDasdreddit98!',
                      user_agent = 'JustATest')
 
 subredditName = 'hiphopheads'
