@@ -1,4 +1,5 @@
 import praw
+import nltk
 from praw.models import MoreComments
 from textblob import TextBlob
 
@@ -17,9 +18,20 @@ def depth_first_comment_iteration (level, comments):
         weight += depth_first_comment_iteration (level + 1, comment.replies)
     return weight
 
+def tag_artists(title):
+    artist_patterns = [
+        (r'','NNP'),
+        (r'','NNP'),
+        (r'','NNP'),
+    ]
+    regex_artist_tagger = nltk.RegexpTagger(artist_patterns)
+    return
+
+
 def extract_name(title):
 
     return
+
 
 def main():
     with open('config.txt') as config:
@@ -36,8 +48,10 @@ def main():
 
     for post in tops:
         print(post.title, '\n')
-        extract_name(post.title)
         testBlob = TextBlob(post.title)
+        testBlob.pos_tags = tag_artists(post.title)
+        extract_name(post.title)
+
         print(testBlob.pos_tags)
         weight += depth_first_comment_iteration(0, post.comments)
 
