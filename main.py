@@ -21,7 +21,7 @@ def depth_first_comment_iteration (level, comments):
 def tag_artists(raw_title):
     artist_patterns = [
         # Everything after  '] ' and before ' -'
-        (r'\] (.*)(?= -)','NNP')
+        (r'(?<=] )(.*)(?=( ft| -))','NNP')
         # Only one feature so far
         # (r'(?i)(?:featuring|feat\.|feat|ft.|ft)[ ]?(.*?)[ ]?(?=\)|\,|\&)','NNP'),
     ]
