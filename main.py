@@ -10,13 +10,17 @@ def analyze_comment(comment):
 
 def depth_first_comment_iteration (level, comments):
     comments.replace_more(limit=None)
-    weight = 0
+    perception = 0
+    relevance = 0
     for comment in comments:
+        relevance += 9
+        # This is not a perfect way, need to count downvotes too
+        relevance += comment.score
         new_weight = analyze_comment(comment)
-        weight += new_weight
+        perception += new_weight
         print (new_weight, 3 * level * ' ', comment.body)
-        weight += depth_first_comment_iteration (level + 1, comment.replies)
-    return weight
+        new_perception, new_relevance = depth_first_comment_iteration (level + 1, comment.replies)
+    return perception, relevance
 
 def tag_artists(raw_title):
     artist_patterns = [
@@ -46,18 +50,24 @@ def main():
     hots = reddit.subreddit(subreddit_name).hot(limit = 1)
     tops = reddit.subreddit(subreddit_name).top('day', limit = 10)
 
-    weight = 0
+    perception = None
+    relevance = None
 
     for post in tops:
+        new_perception = 0
+        new_relevance = 0
+        new_relevance += 90
         print(post.title)
         testBlob = TextBlob(post.title)
-        testBlob.pos_tags = tag_artists(post.title)
+        # testBlob.pos_tags = tag_artists(post.title)
         # extract_name(post.title)
 
         print(testBlob.pos_tags)
-        # weight += depth_first_comment_iteration(0, post.comments)
+        new_perception, new_relevance = depth_first_comment_iteration(0, post.comments)
+        relevance += new_relevance
+        perception += new_perception
 
-    print ('The total weight is ' , weight)
+    print ('The total perception is ' , perception)
 
 if __name__ == "__main__":
     main()
