@@ -2,6 +2,7 @@ import praw
 import nltk
 from praw.models import MoreComments
 from textblob import TextBlob
+import re
 
 def analyze_comment(comment):
     analysis = TextBlob(comment.body)
@@ -10,17 +11,18 @@ def analyze_comment(comment):
 
 def depth_first_comment_iteration (level, comments):
     comments.replace_more(limit=None)
-    perception = 0
+    opinion = 0
     relevance = 0
     for comment in comments:
-        relevance += 9
-        # This is not a perfect way, need to count downvotes too
+        new_opinion = analyze_comment(comment)
+        opinion += new_opinion
         relevance += comment.score
-        new_weight = analyze_comment(comment)
-        perception += new_weight
-        print (new_weight, 3 * level * ' ', comment.body)
+        print (new_opinion, 3 * level * ' ', comment.body)
         new_perception, new_relevance = depth_first_comment_iteration (level + 1, comment.replies)
-    return perception, relevance
+        opinion += new_opinion
+        relevance += comment.score
+
+    return opinion, relevance
 
 def tag_artists(raw_title):
     artist_patterns = [
@@ -34,10 +36,18 @@ def tag_artists(raw_title):
     tagged = regex_artist_tagger.tag(tokens)
     return tagged
 
-
-def extract_name(title):
+def find_artist(title, tags):
+    artists = []
+    raw_mains = re.search(r"(?i)(?<=] )(.+?)(?= -| ft| featuring| feat)", title)
+    mains = raw_mains.parse_main(raw_mains.match)
+    raw_features = re.search('regex to find features', title)
+    if (raw_features):
+        features = raw_features.parse_features(raw_features.match)
     return
 
+def parse_main(raw_main):
+    mains = raw_main.split('&')
+    mains
 
 def main():
     with open('config.txt') as config:
@@ -50,24 +60,24 @@ def main():
     hots = reddit.subreddit(subreddit_name).hot(limit = 1)
     tops = reddit.subreddit(subreddit_name).top('day', limit = 10)
 
-    perception = None
-    relevance = None
+    opinion = 0
+    relevance = 0
+    artists = []
 
     for post in tops:
-        new_perception = 0
+        new_opinion = 0
         new_relevance = 0
-        new_relevance += 90
         print(post.title)
-        testBlob = TextBlob(post.title)
-        # testBlob.pos_tags = tag_artists(post.title)
-        # extract_name(post.title)
+        titleBlob = TextBlob(post.title)
+        print(titleBlob.pos_tags)
+        lowerTitleBlob = TextBlob(post.title.lower())
+        print(lowerTitleBlob.pos_tags)
+        # new_opinion, new_relevance = depth_first_comment_iteration(0, post.comments)
+        # relevance += new_relevance
+        # opinion += new_opinion
+        find_artist(post.title, titleBlob.pos_tags)
 
-        print(testBlob.pos_tags)
-        new_perception, new_relevance = depth_first_comment_iteration(0, post.comments)
-        relevance += new_relevance
-        perception += new_perception
-
-    print ('The total perception is ' , perception)
+    print ('The total relevance is ' , relevance, 'The total opinion is ', opinion)
 
 if __name__ == "__main__":
     main()
