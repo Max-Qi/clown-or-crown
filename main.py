@@ -39,15 +39,31 @@ def tag_artists(raw_title):
 def find_artist(title, tags):
     artists = []
     raw_mains = re.search(r"(?i)(?<=] )(.+?)(?= -| ft| featuring| feat)", title)
-    mains = raw_mains.parse_main(raw_mains.match)
-    raw_features = re.search('regex to find features', title)
+    mains = raw_mains.parse_main_artists(raw_mains.match)
+    raw_features = re.search(r"(?i)(?:featuring|feat|ft)[.]?[ ](.+?)(?=\)| -|$)", title)
     if (raw_features):
-        features = raw_features.parse_features(raw_features.match)
+        features = raw_features.parse_feature_artists(raw_features.match)
     return
 
-def parse_main(raw_main):
-    mains = raw_main.split('&')
-    mains
+def parse_main_artists(raw_artists):
+    split_symbols = [', ', ' x ', ' & ']
+    artists = []
+    for symbol in split_symbols:
+        new_artists = raw_artists.split(symbol)
+        if (len(new_artists) > 1):
+            artists = new_artists
+            break;
+    return artists
+
+def parse_feature_artists(raw_artists):
+    split_symbols = [', ', ' & ']
+    artists = []
+    artists.append(raw_artists)
+    for symbol in split_symbols:
+        for artist in artists:
+            split = artist.split(symbol)
+
+    return
 
 def main():
     with open('config.txt') as config:
