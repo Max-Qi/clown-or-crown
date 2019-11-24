@@ -4,6 +4,50 @@ from textblob import TextBlob
 import re
 import wikipedia
 
+def get_all_artists():
+    wiki_artists = []
+    wiki_groups = []
+    raw_wiki_artists = wikipedia.page('List of hip hop musicians').links
+    raw_wiki_groups = wikipedia.page('List of hip hop groups').links
+    for each in raw_wiki_artists:
+        another = re.search(r'(.*) \(.*\)', each)
+        if another:
+            another = another.group(1)
+        else:
+            another = each
+        if 'ASAP' in another:
+            another = another.replace('ASAP', 'A$AP')
+        wiki_artists.append(another)
+
+    for each in raw_wiki_groups:
+        another = re.search(r'(.*) \(.*\)', each)
+        if another:
+            another = another.group(1)
+        else:
+            another = each
+        wiki_groups.append(another)
+
+    return combine(wiki_artists, wiki_groups)
+
+def combine(arr1, arr2):
+    everyone = []
+    it1 = 0
+    it2 = 0
+    while (it1 != len(arr1) - 1 and it2 != len(arr2) - 1):
+        if (it1 == len(arr1) - 1):
+            everyone.append(arr2[it2])
+            it2 += 2
+        elif (it2 == len(arr2) - 1):
+            everyone.append(arr1[it1])
+            it1 += 1
+        elif (arr1[it1] < arr2[it2]):
+            everyone.append(arr1[it1])
+            it1 += 1
+        elif (arr1[it1] >= arr2[it2]):
+            everyone.append(arr2[it2])
+            it2 += 1
+    return everyone
+
 def analyze_comment(comment):
     analysis = TextBlob(comment.body)
     weight = comment.score * analysis.polarity
@@ -59,7 +103,7 @@ def parse_main_artists(raw_artists):
         new_artists = raw_artists.split(symbol)
         if (len(new_artists) > 1):
             artists = new_artists
-            break;
+            break
     return artists
 
 def parse_feature_artists(raw_artists):
@@ -72,33 +116,13 @@ def parse_feature_artists(raw_artists):
 
     return
 
-def find_artists_from_text(title):
-    wiki_artists = []
-    wiki_groups = []
-    raw_wiki_artists = wikipedia.page('List of hip hop musicians').links
-    raw_wiki_groups = wikipedia.page('List of hip hop groups').links
-    for each in raw_wiki_artists:
-        another = re.search(r"(.*) \(.*\)", each)
-        if another:
-            another = another.group(1)
-        else:
-            another = each
-        if "ASAP" in another:
-            another = another.replace("ASAP","A$AP")
-        wiki_artists.append(another)
-
-    for each in raw_wiki_groups:
-        another = re.search(r"(.*) \(.*\)", each)
-        if another:
-            another = another.group(1)
-        else :
-            another = each
-        wiki_groups.append(another)
-
-    return combine(wiki_artists, wiki_groups)
-
-def combine (arr1, arr2):
-    return;
+# Need to fix capitalization somehow
+def find_artists_from_text(text, all_artists):
+    artists = []
+    for each_artist in all_artists:
+        if (text.startswith(each_artist) or text.endswith(each_artist) or ' ' + each_artist + ' ' in text):
+            artists.append(each_artist)
+    return artists;
 
 def main():
     with open('config.txt') as config:
@@ -108,20 +132,21 @@ def main():
 
     subreddit_name = 'hiphopheads'
     subreddit = reddit.subreddit(subreddit_name)
-    news = reddit.subreddit(subreddit_name).new(limit = 5)
+    news = reddit.subreddit(subreddit_name).new(limit = 10)
     tops = reddit.subreddit(subreddit_name).top('day', limit = 10)
 
     opinion = 0
     relevance = 0
     artists = []
-
-    for post in news:
+    all_artists = get_all_artists()
+    for post in tops:
         new_opinion = 0
         new_relevance = 0
         print(post.title)
         main_artists, feature_artists = find_artists_from_song(post.title)
         if not main_artists:
-            main_artists = find_artists_from_text(post.title)
+            main_artists = find_artists_from_text(post.title, all_artists)
+        print(main_artists)
         # titleBlob = TextBlob(post.title)
         # print(titleBlob.pos_tags)
         # new_opinion, new_relevance = depth_first_comment_iteration(0, post.comments)
