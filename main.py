@@ -41,19 +41,20 @@ def find_artists_from_song(title):
     features = []
     raw_mains = re.search(r"(?i)(?<=] )(.+?)(?= -| ft| featuring| feat)", title)
     if (raw_mains):
-        mains = raw_mains.parse_main_artists(raw_mains.match)
+        mains = parse_main_artists(raw_mains.group(1))
     else:
         return mains, features
 
     raw_features = re.search(r"(?i)(?:featuring|feat|ft)[.]?[ ](.+?)(?=\)| -|$)", title)
     if (raw_features):
-        features = raw_features.parse_feature_artists(raw_features.match)
+        features = parse_feature_artists(raw_features.group(1))
 
     return mains, features
 
 def parse_main_artists(raw_artists):
     split_symbols = [', ', ' x ', ' & ']
     artists = []
+    artists.append(raw_artists)
     for symbol in split_symbols:
         new_artists = raw_artists.split(symbol)
         if (len(new_artists) > 1):
@@ -82,6 +83,8 @@ def find_artists_from_text(title):
             another = another.group(1)
         else:
             another = each
+        if "ASAP" in another:
+            another = another.replace("ASAP","A$AP")
         wiki_artists.append(another)
 
     for each in raw_wiki_groups:
