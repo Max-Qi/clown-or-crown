@@ -1,8 +1,8 @@
 import praw
 import nltk
-from praw.models import MoreComments
 from textblob import TextBlob
 import re
+import wikipedia
 
 def analyze_comment(comment):
     analysis = TextBlob(comment.body)
@@ -36,14 +36,20 @@ def tag_artists(raw_title):
     tagged = regex_artist_tagger.tag(tokens)
     return tagged
 
-def find_artist(title, tags):
-    artists = []
+def find_artists_from_song(title):
+    mains = []
+    features = []
     raw_mains = re.search(r"(?i)(?<=] )(.+?)(?= -| ft| featuring| feat)", title)
-    mains = raw_mains.parse_main_artists(raw_mains.match)
+    if (raw_mains):
+        mains = raw_mains.parse_main_artists(raw_mains.match)
+    else:
+        return mains, features
+
     raw_features = re.search(r"(?i)(?:featuring|feat|ft)[.]?[ ](.+?)(?=\)| -|$)", title)
     if (raw_features):
         features = raw_features.parse_feature_artists(raw_features.match)
-    return
+
+    return mains, features
 
 def parse_main_artists(raw_artists):
     split_symbols = [', ', ' x ', ' & ']
@@ -65,6 +71,32 @@ def parse_feature_artists(raw_artists):
 
     return
 
+def find_artists_from_text(title):
+    wiki_artists = []
+    wiki_groups = []
+    raw_wiki_artists = wikipedia.page('List of hip hop musicians').links
+    raw_wiki_groups = wikipedia.page('List of hip hop groups').links
+    for each in raw_wiki_artists:
+        another = re.search(r"(.*) \(.*\)", each)
+        if another:
+            another = another.group(1)
+        else:
+            another = each
+        wiki_artists.append(another)
+
+    for each in raw_wiki_groups:
+        another = re.search(r"(.*) \(.*\)", each)
+        if another:
+            another = another.group(1)
+        else :
+            another = each
+        wiki_groups.append(another)
+
+    return combine(wiki_artists, wiki_groups)
+
+def combine (arr1, arr2):
+    return;
+
 def main():
     with open('config.txt') as config:
         lines = config.readlines()
@@ -73,25 +105,25 @@ def main():
 
     subreddit_name = 'hiphopheads'
     subreddit = reddit.subreddit(subreddit_name)
-    hots = reddit.subreddit(subreddit_name).hot(limit = 1)
+    news = reddit.subreddit(subreddit_name).new(limit = 5)
     tops = reddit.subreddit(subreddit_name).top('day', limit = 10)
 
     opinion = 0
     relevance = 0
     artists = []
 
-    for post in tops:
+    for post in news:
         new_opinion = 0
         new_relevance = 0
         print(post.title)
-        titleBlob = TextBlob(post.title)
-        print(titleBlob.pos_tags)
-        lowerTitleBlob = TextBlob(post.title.lower())
-        print(lowerTitleBlob.pos_tags)
+        main_artists, feature_artists = find_artists_from_song(post.title)
+        if not main_artists:
+            main_artists = find_artists_from_text(post.title)
+        # titleBlob = TextBlob(post.title)
+        # print(titleBlob.pos_tags)
         # new_opinion, new_relevance = depth_first_comment_iteration(0, post.comments)
         # relevance += new_relevance
         # opinion += new_opinion
-        find_artist(post.title, titleBlob.pos_tags)
 
     print ('The total relevance is ' , relevance, 'The total opinion is ', opinion)
 
