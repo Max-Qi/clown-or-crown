@@ -9,6 +9,8 @@ def get_all_artists():
     wiki_groups = []
     raw_wiki_artists = wikipedia.page('List of hip hop musicians').links
     raw_wiki_groups = wikipedia.page('List of hip hop groups').links
+    last = ''
+
     for each in raw_wiki_artists:
         another = re.search(r'(.*) \(.*\)', each)
         if another:
@@ -17,7 +19,9 @@ def get_all_artists():
             another = each
         if 'ASAP' in another:
             another = another.replace('ASAP', 'A$AP')
-        wiki_artists.append(another)
+        if (another != last):
+            wiki_artists.append(another)
+        last = another
 
     for each in raw_wiki_groups:
         another = re.search(r'(.*) \(.*\)', each)
@@ -25,7 +29,11 @@ def get_all_artists():
             another = another.group(1)
         else:
             another = each
-        wiki_groups.append(another)
+        if 'ASAP' in another:
+            another = another.replace('ASAP', 'A$AP')
+        if (another != last):
+            wiki_groups.append(another)
+        last = another
 
     return combine(wiki_artists, wiki_groups)
 
@@ -80,7 +88,7 @@ def tag_artists(raw_title):
     tagged = regex_artist_tagger.tag(tokens)
     return tagged
 
-def find_artists_from_song(title):
+def find_artists_from_regex(title):
     mains = []
     features = []
     raw_mains = re.search(r"(?i)(?<=] )(.+?)(?= -| ft| featuring| feat)", title)
@@ -111,16 +119,18 @@ def parse_feature_artists(raw_artists):
     artists = []
     artists.append(raw_artists)
     for symbol in split_symbols:
-        for artist in artists:
-            split = artist.split(symbol)
-
-    return
+        new_artists = raw_artists.split(symbol)
+        if (len(new_artists) > 1):
+            artists = new_artists
+            break
+    return artists
 
 # Need to fix capitalization somehow
 def find_artists_from_text(text, all_artists):
     artists = []
     for each_artist in all_artists:
-        if (text.startswith(each_artist) or text.endswith(each_artist) or ' ' + each_artist + ' ' in text):
+        regex = r'( |^)' + re.escape(each_artist) + '(\W|$)'
+        if (re.search(regex, text)):
             artists.append(each_artist)
     return artists;
 
@@ -133,7 +143,7 @@ def main():
     subreddit_name = 'hiphopheads'
     subreddit = reddit.subreddit(subreddit_name)
     news = reddit.subreddit(subreddit_name).new(limit = 10)
-    tops = reddit.subreddit(subreddit_name).top('day', limit = 10)
+    tops = reddit.subreddit(subreddit_name).top('week', limit = 100)
 
     opinion = 0
     relevance = 0
@@ -143,10 +153,12 @@ def main():
         new_opinion = 0
         new_relevance = 0
         print(post.title)
-        main_artists, feature_artists = find_artists_from_song(post.title)
-        if not main_artists:
+        main_artists, feature_artists = find_artists_from_regex(post.title)
+        if (main_artists or feature_artists):
+            print('From REGEX: ', main_artists, feature_artists)
+        else:
             main_artists = find_artists_from_text(post.title, all_artists)
-        print(main_artists)
+            print('From raw text: ', main_artists)
         # titleBlob = TextBlob(post.title)
         # print(titleBlob.pos_tags)
         # new_opinion, new_relevance = depth_first_comment_iteration(0, post.comments)
