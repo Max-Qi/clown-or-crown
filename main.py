@@ -134,6 +134,24 @@ def find_artists_from_text(text, all_artists):
             artists.append(each_artist)
     return artists;
 
+
+def parse_for_repeats(main_artists):
+    artists = []
+    artist_dict = {}
+    for artist in main_artists:
+        artist_dict[artist] = True
+
+    for big_artist in main_artists:
+        for small_artist in main_artists:
+            if big_artist != small_artist and small_artist in big_artist:
+                artist_dict[small_artist] = False
+
+    for artist in artist_dict:
+        if artist_dict[artist] == True:
+            artists.append(artist)
+
+    return artists
+
 def main():
     with open('config.txt') as config:
         lines = config.readlines()
@@ -142,8 +160,8 @@ def main():
 
     subreddit_name = 'hiphopheads'
     subreddit = reddit.subreddit(subreddit_name)
-    news = reddit.subreddit(subreddit_name).new(limit = 10)
-    tops = reddit.subreddit(subreddit_name).top('week', limit = 100)
+    news = reddit.subreddit(subreddit_name).new(limit = 50)
+    tops = reddit.subreddit(subreddit_name).top('week', limit = 50)
 
     opinion = 0
     relevance = 0
@@ -155,10 +173,13 @@ def main():
         print(post.title)
         main_artists, feature_artists = find_artists_from_regex(post.title)
         if (main_artists or feature_artists):
-            print('From REGEX: ', main_artists, feature_artists)
+            pass
+            # print('REGEX: ', main_artists, feature_artists)
         else:
             main_artists = find_artists_from_text(post.title, all_artists)
-            print('From raw text: ', main_artists)
+            # print('RAW: ', main_artists)
+        main_artists = parse_for_repeats(main_artists)
+        print(main_artists)
         # titleBlob = TextBlob(post.title)
         # print(titleBlob.pos_tags)
         # new_opinion, new_relevance = depth_first_comment_iteration(0, post.comments)
