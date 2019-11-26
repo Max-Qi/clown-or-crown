@@ -3,6 +3,7 @@ import nltk
 from textblob import TextBlob
 import re
 import wikipedia
+from math import floor
 
 def get_all_artists():
     wiki_artists = []
@@ -41,7 +42,9 @@ def combine(arr1, arr2):
     everyone = []
     it1 = 0
     it2 = 0
-    while (it1 != len(arr1) - 1 and it2 != len(arr2) - 1):
+    size1 = len(arr1)
+    size2 = len(arr2)
+    while (it1 != size1 - 1 and it2 != size2 - 1):
         if (it1 == len(arr1) - 1):
             everyone.append(arr2[it2])
             it2 += 2
@@ -55,6 +58,19 @@ def combine(arr1, arr2):
             everyone.append(arr2[it2])
             it2 += 1
     return everyone
+
+def check_if_garbage(main_artists, feature_artists, all_artists):
+    artists = []
+    for artist in main_artists + feature_artists:
+        if binary_search(artist, all_artists, 0, len(all_artists) - 1):
+            artists.append(artist)
+
+    return artists
+
+def binary_search(e, array, lower, upper):
+    mid = floor((lower + upper) / 2)
+    if array[mid]
+
 
 def analyze_comment(comment):
     analysis = TextBlob(comment.body)
@@ -150,6 +166,7 @@ def parse_for_repeats(main_artists):
 
     return artists
 
+
 def main():
     with open('config.txt') as config:
         lines = config.readlines()
@@ -171,20 +188,20 @@ def main():
         print(post.title)
         main_artists, feature_artists = find_artists_from_regex(post.title)
         if (main_artists or feature_artists):
-            pass
+            main_artists, feature_artists = check_if_garbage(main_artists, feature_artists, all_artists)
             # print('REGEX: ', main_artists, feature_artists)
         else:
-            main_artists = find_artists_from_text(post.title, all_artists)
+            artists = find_artists_from_text(post.title, all_artists)
             # print('RAW: ', main_artists)
-        main_artists = parse_for_repeats(main_artists)
-        print(main_artists, feature_artists)
+        artists = parse_for_repeats(artists)
+        print(artists)
         # titleBlob = TextBlob(post.title)
         # print(titleBlob.pos_tags)
         # new_opinion, new_relevance = depth_first_comment_iteration(0, post.comments)
         # relevance += new_relevance
         # opinion += new_opinion
 
-    print ('The total relevance is ' , relevance, 'The total opinion is ', opinion)
+    print ('The total relevance is ', relevance, 'The total opinion is ', opinion)
 
 if __name__ == "__main__":
     main()
