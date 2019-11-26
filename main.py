@@ -91,7 +91,7 @@ def tag_artists(raw_title):
 def find_artists_from_regex(title):
     mains = []
     features = []
-    raw_mains = re.search(r"(?i)(?<=] )(.+?)(?= -| ft| featuring| feat)", title)
+    raw_mains = (re.search(r"(?i)(?<=] )(.+?)(?= -| ft| featuring| feat)", title) or re.search(r"(?i)(?<=^)(.+?)(?= -| ft| featuring| feat)", title))
     if (raw_mains):
         mains = parse_main_artists(raw_mains.group(1))
     else:
@@ -117,12 +117,10 @@ def parse_main_artists(raw_artists):
 def parse_feature_artists(raw_artists):
     split_symbols = [', ', ' & ']
     artists = []
-    artists.append(raw_artists)
     for symbol in split_symbols:
-        new_artists = raw_artists.split(symbol)
-        if (len(new_artists) > 1):
-            artists = new_artists
-            break
+        raw_artists = raw_artists.replace(symbol, '|BREAK|')
+
+    artists = raw_artists.split('|BREAK|')
     return artists
 
 # Need to fix capitalization somehow
@@ -167,7 +165,7 @@ def main():
     relevance = 0
     artists = []
     all_artists = get_all_artists()
-    for post in tops:
+    for post in news:
         new_opinion = 0
         new_relevance = 0
         print(post.title)
@@ -179,7 +177,7 @@ def main():
             main_artists = find_artists_from_text(post.title, all_artists)
             # print('RAW: ', main_artists)
         main_artists = parse_for_repeats(main_artists)
-        print(main_artists)
+        print(main_artists, feature_artists)
         # titleBlob = TextBlob(post.title)
         # print(titleBlob.pos_tags)
         # new_opinion, new_relevance = depth_first_comment_iteration(0, post.comments)
