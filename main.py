@@ -36,7 +36,7 @@ def get_all_artists():
             wiki_groups.append(another)
         last = another
 
-    return combine(wiki_artists, wiki_groups).sort()
+    return combine(wiki_artists, wiki_groups)
 
 def combine(arr1, arr2):
     everyone = []
@@ -57,6 +57,7 @@ def combine(arr1, arr2):
         elif (arr1[it1] >= arr2[it2]):
             everyone.append(arr2[it2])
             it2 += 1
+    everyone.sort()
     return everyone
 
 def check_if_garbage(main_artists, feature_artists, all_artists):
@@ -64,12 +65,13 @@ def check_if_garbage(main_artists, feature_artists, all_artists):
     for artist in main_artists + feature_artists:
         if binary_search(artist, all_artists):
             artists.append(artist)
-
     return artists
 
 def binary_search(e, array):
+    if len(array) == 0:
+        return False
     if len(array) != 1:
-        mid = floor(len(array)/2)
+        mid = floor((len(array)-1)/2)
         if array[mid] == e:
             return True
         elif array[mid] < e:
@@ -81,7 +83,6 @@ def binary_search(e, array):
             return True
         else:
             return False
-
 
 def analyze_comment(comment):
     analysis = TextBlob(comment.body)
@@ -193,22 +194,20 @@ def main():
     relevance = 0
     artists = []
     all_artists = get_all_artists()
-    for post in news:
+    for post in tops:
         new_opinion = 0
         new_relevance = 0
         print(post.title)
         main_artists, feature_artists = find_artists_from_regex(post.title)
         if (main_artists or feature_artists):
             artists = check_if_garbage(main_artists, feature_artists, all_artists)
-            # print('REGEX: ', main_artists, feature_artists)
-        else:
+        if (not (main_artists or feature_artists or artists)):
             artists = find_artists_from_text(post.title, all_artists)
-            # print('RAW: ', main_artists)
         artists = parse_for_repeats(artists)
         print(artists)
-        # titleBlob = TextBlob(post.title)
-        # print(titleBlob.pos_tags)
-        # new_opinion, new_relevance = depth_first_comment_iteration(0, post.comments)
+        artists = []
+        titleBlob = TextBlob(post.title)
+        new_opinion, new_relevance = depth_first_comment_iteration(0, post.comments)
         # relevance += new_relevance
         # opinion += new_opinion
 
