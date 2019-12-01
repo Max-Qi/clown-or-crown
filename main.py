@@ -36,7 +36,7 @@ def get_all_artists():
             wiki_groups.append(another)
         last = another
 
-    return combine(wiki_artists, wiki_groups)
+    return combine(wiki_artists, wiki_groups).sort()
 
 def combine(arr1, arr2):
     everyone = []
@@ -62,14 +62,25 @@ def combine(arr1, arr2):
 def check_if_garbage(main_artists, feature_artists, all_artists):
     artists = []
     for artist in main_artists + feature_artists:
-        if binary_search(artist, all_artists, 0, len(all_artists) - 1):
+        if binary_search(artist, all_artists):
             artists.append(artist)
 
     return artists
 
-def binary_search(e, array, lower, upper):
-    mid = floor((lower + upper) / 2)
-    if array[mid]
+def binary_search(e, array):
+    if len(array) != 1:
+        mid = floor(len(array)/2)
+        if array[mid] == e:
+            return True
+        elif array[mid] < e:
+            return binary_search(e, array[mid+1:])
+        elif array[mid] > e:
+            return binary_search(e, array[:mid])
+    else:
+        if array[0] == e:
+            return True
+        else:
+            return False
 
 
 def analyze_comment(comment):
@@ -188,7 +199,7 @@ def main():
         print(post.title)
         main_artists, feature_artists = find_artists_from_regex(post.title)
         if (main_artists or feature_artists):
-            main_artists, feature_artists = check_if_garbage(main_artists, feature_artists, all_artists)
+            artists = check_if_garbage(main_artists, feature_artists, all_artists)
             # print('REGEX: ', main_artists, feature_artists)
         else:
             artists = find_artists_from_text(post.title, all_artists)
