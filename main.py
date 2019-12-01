@@ -86,23 +86,23 @@ def binary_search(e, array):
 
 def analyze_comment(comment):
     analysis = TextBlob(comment.body)
-    weight = comment.score * analysis.polarity
-    return weight
+    opinion = comment.score * analysis.polarity
+    return opinion
 
-def depth_first_comment_iteration (level, comments):
+def depth_first_comment_iteration (level, comments, artists_dict):
     comments.replace_more(limit=None)
     opinion = 0
     relevance = 0
+
     for comment in comments:
         new_opinion = analyze_comment(comment)
-        opinion += new_opinion
-        relevance += comment.score
-        print (new_opinion, 3 * level * ' ', comment.body)
-        new_perception, new_relevance = depth_first_comment_iteration (level + 1, comment.replies)
-        opinion += new_opinion
-        relevance += comment.score
+        for artist in artists_dict:
+            artists_dict[artist][opinion] += new_opinion
+            artists_dict[artist][relevance] += comment.score
+        print (3 * level * ' ', comment.body)
+        artists_dict = depth_first_comment_iteration (level + 1, comment.replies, artists_dict)
 
-    return opinion, relevance
+    return artists_dict
 
 def tag_artists(raw_title):
     artist_patterns = [
@@ -195,8 +195,7 @@ def main():
     artists = []
     all_artists = get_all_artists()
     for post in tops:
-        new_opinion = 0
-        new_relevance = 0
+
         print(post.title)
         main_artists, feature_artists = find_artists_from_regex(post.title)
         if (main_artists or feature_artists):
@@ -205,11 +204,16 @@ def main():
             artists = find_artists_from_text(post.title, all_artists)
         artists = parse_for_repeats(artists)
         print(artists)
-        artists = []
+
         titleBlob = TextBlob(post.title)
-        new_opinion, new_relevance = depth_first_comment_iteration(0, post.comments)
-        # relevance += new_relevance
-        # opinion += new_opinion
+        artists_dict = {}
+        for artist in artists:
+            artists_dict[artist] = {
+                opinion: 0,
+                relevance: 0,
+            }
+        artists_dict = depth_first_comment_iteration(0, post.comments, artists_dict)
+        artists = []
 
     print ('The total relevance is ', relevance, 'The total opinion is ', opinion)
 
