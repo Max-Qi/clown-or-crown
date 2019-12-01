@@ -1,7 +1,87 @@
 import praw
 import nltk
-from praw.models import MoreComments
 from textblob import TextBlob
+import re
+import wikipedia
+from math import floor
+
+def get_all_artists():
+    wiki_artists = []
+    wiki_groups = []
+    raw_wiki_artists = wikipedia.page('List of hip hop musicians').links
+    raw_wiki_groups = wikipedia.page('List of hip hop groups').links
+    last = ''
+
+    for each in raw_wiki_artists:
+        another = re.search(r'(.*) \(.*\)', each)
+        if another:
+            another = another.group(1)
+        else:
+            another = each
+        if 'ASAP' in another:
+            another = another.replace('ASAP', 'A$AP')
+        if (another != last):
+            wiki_artists.append(another)
+        last = another
+
+    for each in raw_wiki_groups:
+        another = re.search(r'(.*) \(.*\)', each)
+        if another:
+            another = another.group(1)
+        else:
+            another = each
+        if 'ASAP' in another:
+            another = another.replace('ASAP', 'A$AP')
+        if (another != last):
+            wiki_groups.append(another)
+        last = another
+
+    return combine(wiki_artists, wiki_groups).sort()
+
+def combine(arr1, arr2):
+    everyone = []
+    it1 = 0
+    it2 = 0
+    size1 = len(arr1)
+    size2 = len(arr2)
+    while (it1 != size1 - 1 and it2 != size2 - 1):
+        if (it1 == len(arr1) - 1):
+            everyone.append(arr2[it2])
+            it2 += 2
+        elif (it2 == len(arr2) - 1):
+            everyone.append(arr1[it1])
+            it1 += 1
+        elif (arr1[it1] < arr2[it2]):
+            everyone.append(arr1[it1])
+            it1 += 1
+        elif (arr1[it1] >= arr2[it2]):
+            everyone.append(arr2[it2])
+            it2 += 1
+    return everyone
+
+def check_if_garbage(main_artists, feature_artists, all_artists):
+    artists = []
+    for artist in main_artists + feature_artists:
+        if binary_search(artist, all_artists):
+            artists.append(artist)
+
+    return artists
+
+def binary_search(e, array):
+    if len(array) != 1:
+        mid = floor(len(array)/2)
+        if array[mid] == e:
+            return True
+        elif array[mid] < e:
+            return binary_search(e, array[mid+1:])
+        elif array[mid] > e:
+            return binary_search(e, array[:mid])
+    else:
+        if array[0] == e:
+            return True
+        else:
+            return False
+
 
 def analyze_comment(comment):
     analysis = TextBlob(comment.body)
@@ -10,17 +90,18 @@ def analyze_comment(comment):
 
 def depth_first_comment_iteration (level, comments):
     comments.replace_more(limit=None)
-    perception = 0
+    opinion = 0
     relevance = 0
     for comment in comments:
-        relevance += 9
-        # This is not a perfect way, need to count downvotes too
+        new_opinion = analyze_comment(comment)
+        opinion += new_opinion
         relevance += comment.score
-        new_weight = analyze_comment(comment)
-        perception += new_weight
-        print (new_weight, 3 * level * ' ', comment.body)
+        print (new_opinion, 3 * level * ' ', comment.body)
         new_perception, new_relevance = depth_first_comment_iteration (level + 1, comment.replies)
-    return perception, relevance
+        opinion += new_opinion
+        relevance += comment.score
+
+    return opinion, relevance
 
 def tag_artists(raw_title):
     artist_patterns = [
@@ -34,9 +115,67 @@ def tag_artists(raw_title):
     tagged = regex_artist_tagger.tag(tokens)
     return tagged
 
+def find_artists_from_regex(title):
+    mains = []
+    features = []
+    raw_mains = (re.search(r"(?i)(?<=] )(.+?)(?= -| ft| featuring| feat)", title) or re.search(r"(?i)(?<=^)(.+?)(?= -| ft| featuring| feat)", title))
+    if (raw_mains):
+        mains = parse_main_artists(raw_mains.group(1))
+    else:
+        return mains, features
 
-def extract_name(title):
-    return
+    raw_features = re.search(r"(?i)(?:featuring|feat|ft)[.]?[ ](.+?)(?=\)| -|$)", title)
+    if (raw_features):
+        features = parse_feature_artists(raw_features.group(1))
+
+    return mains, features
+
+def parse_main_artists(raw_artists):
+    split_symbols = [', ', ' x ', ' & ']
+    artists = []
+    artists.append(raw_artists)
+    for symbol in split_symbols:
+        new_artists = raw_artists.split(symbol)
+        if (len(new_artists) > 1):
+            artists = new_artists
+            break
+    return artists
+
+def parse_feature_artists(raw_artists):
+    split_symbols = [', ', ' & ']
+    artists = []
+    for symbol in split_symbols:
+        raw_artists = raw_artists.replace(symbol, '|BREAK|')
+
+    artists = raw_artists.split('|BREAK|')
+    return artists
+
+# Need to fix capitalization somehow
+def find_artists_from_text(text, all_artists):
+    artists = []
+    for each_artist in all_artists:
+        regex = r'( |^)' + re.escape(each_artist) + '(\W|$)'
+        if (re.search(regex, text)):
+            artists.append(each_artist)
+    return artists;
+
+
+def parse_for_repeats(main_artists):
+    artists = []
+    artist_dict = {}
+    for artist in main_artists:
+        artist_dict[artist] = True
+
+    for big_artist in main_artists:
+        for small_artist in main_artists:
+            if big_artist != small_artist and small_artist in big_artist:
+                artist_dict[small_artist] = False
+
+    for artist in artist_dict:
+        if artist_dict[artist] == True:
+            artists.append(artist)
+
+    return artists
 
 
 def main():
@@ -47,27 +186,33 @@ def main():
 
     subreddit_name = 'hiphopheads'
     subreddit = reddit.subreddit(subreddit_name)
-    hots = reddit.subreddit(subreddit_name).hot(limit = 1)
-    tops = reddit.subreddit(subreddit_name).top('day', limit = 10)
+    news = reddit.subreddit(subreddit_name).new(limit = 50)
+    tops = reddit.subreddit(subreddit_name).top('week', limit = 50)
 
-    perception = None
-    relevance = None
-
-    for post in tops:
-        new_perception = 0
+    opinion = 0
+    relevance = 0
+    artists = []
+    all_artists = get_all_artists()
+    for post in news:
+        new_opinion = 0
         new_relevance = 0
-        new_relevance += 90
         print(post.title)
-        testBlob = TextBlob(post.title)
-        # testBlob.pos_tags = tag_artists(post.title)
-        # extract_name(post.title)
+        main_artists, feature_artists = find_artists_from_regex(post.title)
+        if (main_artists or feature_artists):
+            artists = check_if_garbage(main_artists, feature_artists, all_artists)
+            # print('REGEX: ', main_artists, feature_artists)
+        else:
+            artists = find_artists_from_text(post.title, all_artists)
+            # print('RAW: ', main_artists)
+        artists = parse_for_repeats(artists)
+        print(artists)
+        # titleBlob = TextBlob(post.title)
+        # print(titleBlob.pos_tags)
+        # new_opinion, new_relevance = depth_first_comment_iteration(0, post.comments)
+        # relevance += new_relevance
+        # opinion += new_opinion
 
-        print(testBlob.pos_tags)
-        new_perception, new_relevance = depth_first_comment_iteration(0, post.comments)
-        relevance += new_relevance
-        perception += new_perception
-
-    print ('The total perception is ' , perception)
+    print ('The total relevance is ', relevance, 'The total opinion is ', opinion)
 
 if __name__ == "__main__":
     main()
