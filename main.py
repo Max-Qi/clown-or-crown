@@ -91,15 +91,13 @@ def analyze_comment(comment):
 
 def depth_first_comment_iteration (level, comments, artists_dict):
     comments.replace_more(limit=None)
-    opinion = 0
-    relevance = 0
 
     for comment in comments:
         new_opinion = analyze_comment(comment)
         for artist in artists_dict:
-            artists_dict[artist][opinion] += new_opinion
-            artists_dict[artist][relevance] += comment.score
-        print (3 * level * ' ', comment.body)
+            artists_dict[artist]['opinion'] += new_opinion
+            artists_dict[artist]['relevance'] += comment.score
+        # print (3 * level * ' ', comment.body)
         artists_dict = depth_first_comment_iteration (level + 1, comment.replies, artists_dict)
 
     return artists_dict
@@ -187,8 +185,8 @@ def main():
 
     subreddit_name = 'hiphopheads'
     subreddit = reddit.subreddit(subreddit_name)
-    news = reddit.subreddit(subreddit_name).new(limit = 50)
-    tops = reddit.subreddit(subreddit_name).top('week', limit = 50)
+    news = reddit.subreddit(subreddit_name).new(limit = 20)
+    tops = reddit.subreddit(subreddit_name).top('week', limit = 15)
 
     opinion = 0
     relevance = 0
@@ -209,13 +207,14 @@ def main():
         artists_dict = {}
         for artist in artists:
             artists_dict[artist] = {
-                opinion: 0,
-                relevance: 0,
+                'opinion': 0,
+                'relevance': 0,
             }
-        artists_dict = depth_first_comment_iteration(0, post.comments, artists_dict)
+        if artists:
+            artists_dict = depth_first_comment_iteration(0, post.comments, artists_dict)
+        print(artists_dict)
         artists = []
 
-    print ('The total relevance is ', relevance, 'The total opinion is ', opinion)
 
 if __name__ == "__main__":
     main()
